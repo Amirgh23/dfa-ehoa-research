@@ -1,0 +1,12 @@
+[project]
+name = "ehoa-feature-selection"
+version = "1.0.0"
+description = "Leakage-free, reproducible EHOA feature selection implementation"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -p no:cacheprovider"
+

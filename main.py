@@ -76,6 +76,34 @@ def plot_confusion(model, X_test: np.ndarray, y_test: np.ndarray, output: Path, 
     plt.close(fig)
 
 
+def plot_classifier_comparison(comparison: pd.DataFrame, output: Path, title: str) -> None:
+    """Plot held-out balanced accuracy before and after feature selection."""
+    plot_data = comparison.copy()
+    plot_data["feature_set"] = plot_data["feature_set"].map(
+        {"ehoa": "EHOA-selected", "all_features": "All features"}
+    )
+    fig, axis = plt.subplots(figsize=(10, 5.5))
+    sns.barplot(
+        data=plot_data,
+        x="classifier",
+        y="balanced_accuracy",
+        hue="feature_set",
+        palette=["#2563eb", "#94a3b8"],
+        ax=axis,
+    )
+    axis.set(
+        title=title,
+        xlabel="Classifier",
+        ylabel="Held-out balanced accuracy",
+        ylim=(0.0, 1.05),
+    )
+    axis.grid(axis="y", alpha=0.25)
+    axis.legend(title="Feature set", loc="lower right")
+    fig.tight_layout()
+    fig.savefig(output, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+
+
 def explain_features(
     model,
     X_train: np.ndarray,
@@ -208,6 +236,11 @@ def run_dataset(name: str, args: argparse.Namespace, output_dir: Path) -> dict[s
         }
     ).to_csv(dataset_dir / "selected_features.csv", index=False)
     plot_convergence(best, dataset_dir / "convergence.png", f"EHOA — {name}")
+    plot_classifier_comparison(
+        comparison,
+        dataset_dir / "classifier_comparison.png",
+        f"EHOA vs. all features — {name}",
+    )
 
     X_train_p, y_train_p, X_test_p, _, _ = preprocess_train_test(
         X_train,
@@ -280,6 +313,53 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def write_experiment_report(
+    summaries: list[dict[str, object]],
+    args: argparse.Namespace,
+    output: Path,
+) -> None:
+    """Create a compact, professor-ready report from the exact run artifacts."""
+    rows = []
+    for item in summaries:
+        rows.append(
+            "| {dataset} | {selected_features}/{total_features} | {reduction_percent:.2f}% "
+            "| {best_cv_accuracy:.4f} | {knn_test_accuracy:.4f} "
+            "| {knn_test_balanced_accuracy:.4f} |".format(**item)
+        )
+    report = f"""# گزارش اجرای EHOA
+
+این گزارش به‌صورت خودکار از artifactهای همین اجرا تولید شده است؛ بنابراین اعداد آن
+با فایل‌های CSV پوشه‌ی نتایج یکسان‌اند.
+
+## تنظیمات
+
+- Profile: `{args.profile}`
+- Chaotic map: `{args.chaotic_map}`
+- Population / iterations: `{args.hikers}` / `{args.iterations}`
+- CV folds / independent runs: `{args.folds}` / `{args.runs}`
+- Fitness alpha: `{args.alpha}`
+- Random seed: `{args.seed}`
+- SMOTE: `{'disabled' if args.no_smote else 'training folds only'}`
+
+## خلاصه نتایج
+
+| Dataset | Selected/total | Reduction | CV accuracy | Test accuracy | Test balanced accuracy |
+|---|---:|---:|---:|---:|---:|
+{chr(10).join(rows)}
+
+## تفسیر صحیح
+
+`CV accuracy` فقط روی داده‌ی آموزش و برای بهینه‌سازی subset محاسبه شده است.
+`Test accuracy` و `Test balanced accuracy` روی hold-out دست‌نخورده محاسبه شده‌اند
+و معیار اصلی تعمیم هستند. پروفایل quick برای دموی کد است؛ ادعای بازتولید مقاله
+به پروفایل paper، ۲۰ اجرای مستقل و مجموعه‌داده‌های اصلی نیاز دارد.
+
+برای جزئیات هر classifier، ویژگی‌های منتخب و نمودارها به زیرپوشه‌ی هر dataset
+مراجعه کنید.
+"""
+    (output / "REPORT.md").write_text(report, encoding="utf-8")
+
+
 def main(argv: list[str] | None = None) -> list[dict[str, object]]:
     args = build_parser().parse_args(argv)
     defaults = {
@@ -309,6 +389,7 @@ def main(argv: list[str] | None = None) -> list[dict[str, object]]:
     ]
     summary_frame = pd.DataFrame(summaries)
     summary_frame.to_csv(args.output / "summary.csv", index=False)
+    write_experiment_report(summaries, args, args.output)
     print("\n" + summary_frame.to_string(index=False, float_format=lambda value: f"{value:.4f}"))
     return summaries
 

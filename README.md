@@ -6,6 +6,20 @@
 > and interpretable feature selection in medical data classification*, Cluster
 > Computing. DOI: https://doi.org/10.1007/s10586-026-05946-9
 
+## مسیر سریع برای ارائه
+
+- [گزارش کامل فارسی](docs/REPORT_FA.md)
+- [پاورپوینت آماده ارائه](docs/EHOA_Presentation_FA.pptx)
+- [سناریوی ارائه و پاسخ به سؤال‌های استاد](docs/PRESENTATION_FA.md)
+- [جدول تطبیق معادلات مقاله با کد](docs/ARTICLE_TO_CODE.md)
+- [گزارش خودکار آخرین اجرا](results/REPORT.md)
+
+برای تست و اجرای کامل دموی ارائه با یک فرمان:
+
+```powershell
+.\run_demo.ps1
+```
+
 ## چه چیزهایی پیاده‌سازی شده‌اند؟
 
 - مقداردهی جمعیت با ۱۰ chaotic map و پیش‌فرض **Tent**؛
@@ -82,7 +96,9 @@ python -m venv .venv
 - `selected_features.csv`: نام و اندیس ویژگی‌های انتخاب‌شده؛
 - `convergence.csv/png`: همگرایی fitness، accuracy، تعداد ویژگی و diversity؛
 - `confusion_matrix_knn.png`: فقط روی test دست‌نخورده؛
-- `feature_importance.csv/png`: توضیح‌پذیری واقعی، نه مقادیر تصادفی.
+- `feature_importance.csv/png`: توضیح‌پذیری واقعی، نه مقادیر تصادفی؛
+- `classifier_comparison.png`: مقایسه‌ی EHOA و همه‌ی ویژگی‌ها روی hold-out؛
+- `REPORT.md`: گزارش خودکار با تنظیمات و اعداد دقیق همان اجرا.
 
 ## نکته‌ی علمی مهم
 
