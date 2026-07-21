@@ -1,0 +1,16 @@
+feature,importance,method
+worst concave points,0.028670634920634964,permutation
+worst perimeter,0.02187500000000004,permutation
+worst area,0.017708333333333392,permutation
+mean concave points,0.01711309523809529,permutation
+worst smoothness,0.012450396825396842,permutation
+mean area,0.010763888888888934,permutation
+mean perimeter,0.006498015873015911,permutation
+worst texture,0.006498015873015911,permutation
+concavity error,0.0034722222222222598,permutation
+mean fractal dimension,0.002132936507936528,permutation
+mean compactness,0.001736111111111127,permutation
+mean symmetry,0.0015873015873016315,permutation
+compactness error,-0.006299603174603147,permutation
+symmetry error,-0.0072916666666666295,permutation
+mean texture,-0.011904761904761857,permutation

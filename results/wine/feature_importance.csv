@@ -1,0 +1,7 @@
+feature,importance,method
+flavanoids,0.19126984126984137,permutation
+proline,0.11845238095238105,permutation
+alcohol,0.09154761904761913,permutation
+hue,0.07285714285714291,permutation
+color_intensity,0.06071428571428581,permutation
+ash,0.0026190476190476484,permutation

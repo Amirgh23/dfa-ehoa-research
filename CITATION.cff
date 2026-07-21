@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this implementation, please cite the original EHOA paper."
+title: "EHOA Feature Selection: Reproducible Python Implementation"
+type: software
+authors:
+  - name: "Amirgh23"
+repository-code: "https://github.com/Amirgh23/ehoa-feature-selection"
+license: MIT
+version: 1.0.0
+date-released: 2026-07-21
+preferred-citation:
+  type: article
+  title: "An enhanced Hiking optimization algorithm for accurate and interpretable feature selection in medical data classification"
+  authors:
+    - family-names: "Hegazy"
+      given-names: "Ah. E."
+    - family-names: "Makhlouf"
+      given-names: "M. A."
+    - family-names: "Salem"
+      given-names: "Omar A. M."
+    - family-names: "Hafiz"
+      given-names: "B."
+  journal: "Cluster Computing"
+  year: 2026
+  volume: 29
+  doi: "10.1007/s10586-026-05946-9"
