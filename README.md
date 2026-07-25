@@ -212,3 +212,9 @@ This repository implements a valid experimental framework, but the `quick` profi
 ## License and citation
 
 The code is released under the [MIT License](LICENSE). For academic use, cite the original paper using the metadata provided in [`CITATION.cff`](CITATION.cff).
+
+---
+
+## فارسی — Appendix
+
+این بخش ترجمهٔ فارسی و راهنمای کوتاه این مخزن است. برای نصب، اجرا و جزئیات کامل، ابتدا بخش انگلیسی را بخوانید و دستورهای همان بخش را اجرا کنید.
