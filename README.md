@@ -1,3 +1,7 @@
+# English Overview
+
+This repository contains the source code and documentation for Amirgh23's **ehoa-feature-selection** project. Follow the English sections and commands below for setup and usage.
+
 # EHOA Feature Selection
 
 [![Tests](https://github.com/Amirgh23/ehoa-feature-selection/actions/workflows/tests.yml/badge.svg)](https://github.com/Amirgh23/ehoa-feature-selection/actions/workflows/tests.yml)
