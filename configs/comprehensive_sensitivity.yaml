@@ -1,0 +1,25 @@
+experiment: comprehensive_sensitivity
+datasets: [breast_cancer]
+methods: [DFA-EHOA]
+seeds: [42, 123, 2026]
+population: 5
+iterations: 4
+folds: 3
+test_size: 0.2
+resume: true
+dfa: {stability_strategy: periodic, stability_interval: 2, bootstrap_count: 5,
+  resample_fraction: 0.8, reliability_source: resampling, reliability_rho: 0.6,
+  interaction_top_k: 30, lambda_stability: 0.5, lambda_interaction: 0.5,
+  eta_stability: 0.35, eta_diversity: 0.2, eta_stagnation: 0.3,
+  stagnation_patience: 5, weight_schedule: adaptive}
+sensitivity:
+  eta_stability: [0.15, 0.35, 0.55]
+  eta_diversity: [0.1, 0.2, 0.35]
+  eta_stagnation: [0.15, 0.3, 0.5]
+  lambda_stability: [0.25, 0.5, 0.75]
+  lambda_interaction: [0.25, 0.5, 0.75]
+  bootstrap_count: [3, 5, 8]
+  stagnation_patience: [3, 5, 8]
+  interaction_top_k: [10, 30, 50]
+  reliability_rho: [0.3, 0.6, 0.85]
+  stability_strategy: [every, periodic, event]

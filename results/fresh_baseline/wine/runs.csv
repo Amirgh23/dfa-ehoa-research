@@ -1,0 +1,2 @@
+run,seed,fitness,cv_accuracy,selected_features,reduction_percent,evaluations,runtime_seconds
+1,42,0.025829670329670262,0.9785714285714286,6,53.84615384615385,60,1.8916268000029959

@@ -1,0 +1,16 @@
+feature_index,feature_name
+1,mean texture
+2,mean perimeter
+3,mean area
+5,mean compactness
+7,mean concave points
+8,mean symmetry
+9,mean fractal dimension
+15,compactness error
+16,concavity error
+18,symmetry error
+21,worst texture
+22,worst perimeter
+23,worst area
+24,worst smoothness
+27,worst concave points

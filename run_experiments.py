@@ -1,0 +1,110 @@
+"""Config-driven, resumable 2x2 DFA-EHOA experiment runner."""
+from __future__ import annotations
+import argparse, json, time
+from pathlib import Path
+import numpy as np, pandas as pd, yaml
+from scipy.stats import friedmanchisquare, wilcoxon
+from sklearn.datasets import load_breast_cancer, load_wine
+from sklearn.model_selection import train_test_split
+from ehoa import EHOA
+from proposed import DFAEHOA
+from proposed.interaction import subset_redundancy, subset_interaction_quality
+from proposed.stability import compute_jaccard_stability, compute_nogueira_stability
+from utils import clean_dataset, evaluate_classifiers
+
+VARIANTS={"EHOA":None,"SF-EHOA":(True,"stability"),"IG-EHOA":(False,"interaction"),"DFA-EHOA":(True,"dual")}
+def load_data(name, cfg=None):
+    builtins={"breast_cancer":load_breast_cancer,"wine":load_wine}
+    if name in builtins:
+        bunch=builtins[name](); return clean_dataset(bunch.data,bunch.target)
+    external=(cfg or {}).get("external_datasets",{}).get(name)
+    if not external: raise ValueError(f"Unknown dataset {name!r}; define it under external_datasets")
+    path=Path(external["path"]).expanduser(); frame=pd.read_csv(path,sep=external.get("delimiter",","))
+    target=external["target"]
+    if target not in frame: raise ValueError(f"Target column {target!r} is absent from {path}")
+    y=frame.pop(target).to_numpy(); X=frame.select_dtypes(include=[np.number]).to_numpy()
+    if X.shape[1] != frame.shape[1]: raise ValueError("All feature columns must be numeric after removing target")
+    return clean_dataset(X,y)
+
+def ci95(values):
+    a=np.asarray(values,float); return 0.0 if len(a)<2 else float(1.96*a.std(ddof=1)/np.sqrt(len(a)))
+
+def cliffs_delta(a,b):
+    a=np.asarray(a,float); b=np.asarray(b,float)
+    return float(sum(x>y for x in a for y in b)-sum(x<y for x in a for y in b))/(len(a)*len(b))
+
+def aggregate(raw):
+    numeric=[c for c in ["balanced_accuracy","f1_score","mcc","selected_features","redundancy","interaction_quality","runtime_seconds","jaccard_stability","nogueira_stability"] if c in raw]
+    rows=[]
+    for keys,g in raw.groupby(["dataset","method"]):
+        row={"dataset":keys[0],"method":keys[1],"runs":len(g)}
+        for c in numeric:
+            row[f"{c}_mean"]=g[c].mean(); row[f"{c}_std"]=g[c].std(); row[f"{c}_median"]=g[c].median(); row[f"{c}_iqr"]=g[c].quantile(.75)-g[c].quantile(.25); row[f"{c}_ci95"]=ci95(g[c])
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+def statistics(raw):
+    rows=[]
+    for dataset,g in raw.groupby("dataset"):
+        pivot=g.pivot(index="seed",columns="method",values="balanced_accuracy").dropna()
+        if len(pivot)>=2 and len(pivot.columns)>=3:
+            stat,p=friedmanchisquare(*[pivot[c] for c in pivot]); rows.append(dict(dataset=dataset,test="friedman",comparison="all",statistic=stat,p_value=p))
+        if "EHOA" in pivot:
+            for method in pivot.columns:
+                if method=="EHOA": continue
+                try: stat,p=wilcoxon(pivot[method],pivot["EHOA"])
+                except ValueError: stat,p=0.,1.
+                diff=pivot[method]-pivot["EHOA"]; rows.append(dict(dataset=dataset,test="wilcoxon",comparison=f"{method} vs EHOA",statistic=stat,p_value=p,effect_median=diff.median(),cliffs_delta=cliffs_delta(pivot[method],pivot["EHOA"])))
+    frame=pd.DataFrame(rows)
+    if not frame.empty:
+        pair=frame.test=="wilcoxon"; ordered=frame.loc[pair].sort_values("p_value"); m=len(ordered); adjusted=[]; running=0.0
+        for rank,pvalue in enumerate(ordered.p_value): running=max(running,min(1.0,(m-rank)*pvalue)); adjusted.append(running)
+        frame.loc[ordered.index,"holm_adjusted_p"]=adjusted; frame.loc[ordered.index,"significant_holm"]=np.asarray(adjusted)<.05
+    return frame
+
+def main(argv=None):
+    ap=argparse.ArgumentParser(); ap.add_argument("--config",type=Path,required=True); ap.add_argument("--output",type=Path,default=Path("results")); args=ap.parse_args(argv)
+    cfg=yaml.safe_load(args.config.read_text()); root=args.output; [(root/p).mkdir(parents=True,exist_ok=True) for p in ["raw","aggregated","statistics","figures","tables","ablation","sensitivity"]]
+    raw_path=root/"raw"/f"{cfg['experiment']}.csv"; existing=pd.read_csv(raw_path) if cfg.get("resume") and raw_path.exists() else pd.DataFrame(); rows=existing.to_dict("records")
+    done={(r["dataset"],r["method"],int(r["seed"])) for r in rows}
+    method_specs=[]
+    for method in cfg["methods"]:
+        if method=="DFA-EHOA" and cfg.get("sensitivity"):
+            base=cfg.get("dfa",{}).copy()
+            for parameter,values in cfg["sensitivity"].items():
+                for value in values:
+                    method_specs.append((method,f"DFA-EHOA[{parameter}={value}]",base|{parameter:value}))
+        else: method_specs.append((method,method,cfg.get("dfa",{})))
+    masks={}
+    for dataset in cfg["datasets"]:
+      X,y=load_data(dataset,cfg)
+      for seed in cfg["seeds"]:
+        Xtr,Xte,ytr,yte=train_test_split(X,y,test_size=cfg.get("test_size",.2),stratify=y,random_state=seed)
+        for method,label,dfa_parameters in method_specs:
+          if (dataset,label,seed) in done: continue
+          common=dict(n_hikers=cfg["population"],max_iter=cfg["iterations"],n_folds=cfg["folds"],random_state=seed,verbose=False)
+          selector=EHOA(**common) if method=="EHOA" else DFAEHOA(**common,feedback_enabled=VARIANTS[method][0],transition_mode=VARIANTS[method][1],**dfa_parameters)
+          mask,_,features=selector.fit(Xtr,ytr); metric,_,_=evaluate_classifiers(Xtr,ytr,Xte,yte,features,random_state=seed); knn=metric[metric.classifier=="knn"].iloc[0]
+          key=(dataset,label); masks.setdefault(key,[]).append(mask.astype(int))
+          row=dict(dataset=dataset,method=label,seed=seed,fold="holdout",total_features=X.shape[1],selected_features=len(features),feature_ratio=len(features)/X.shape[1],fitness=selector.best_fitness,evaluations=selector.evaluations_,runtime_seconds=selector.runtime_seconds_,redundancy=subset_redundancy(Xtr,mask),parameters=json.dumps(dfa_parameters,sort_keys=True),selected_indices=json.dumps(features.tolist()),**{k:float(knn[k]) for k in ["accuracy","balanced_accuracy","f1_score","mcc","sensitivity","specificity"]})
+          rows.append(row); pd.DataFrame(rows).to_csv(raw_path,index=False)
+          safe_label=label.replace("[","_").replace("]","").replace("=","-")
+          selector.history_frame().assign(dataset=dataset,method=label,seed=seed).to_csv(root/"raw"/f"trace_{cfg['experiment']}_{dataset}_{safe_label}_{seed}.csv",index=False)
+    raw=pd.DataFrame(rows)
+    if "interaction_quality" not in raw: raw["interaction_quality"]=np.nan
+    for index,row in raw[raw.interaction_quality.isna()].iterrows():
+        X,y=load_data(row.dataset,cfg); Xtr,_,ytr,_=train_test_split(X,y,test_size=cfg.get("test_size",.2),stratify=y,random_state=int(row.seed))
+        mask=np.zeros(X.shape[1],bool); mask[np.asarray(json.loads(row.selected_indices),int)]=True
+        raw.loc[index,"interaction_quality"]=subset_interaction_quality(Xtr,ytr,mask,int(row.seed))
+    for (dataset,method),g in raw.groupby(["dataset","method"]):
+        total=int(g.total_features.iloc[0]) if "total_features" in g and pd.notna(g.total_features.iloc[0]) else int(round(g.selected_features.iloc[0]/g.feature_ratio.iloc[0]))
+        ms=np.zeros((len(g),total),bool)
+        for row_index, value in enumerate(g.selected_indices): ms[row_index,np.asarray(json.loads(value),int)]=True
+        raw.loc[g.index,"total_features"]=total; raw.loc[g.index,"jaccard_stability"]=compute_jaccard_stability(ms); raw.loc[g.index,"nogueira_stability"]=compute_nogueira_stability(ms)
+    raw.to_csv(raw_path,index=False); agg=aggregate(raw); agg.to_csv(root/"aggregated"/f"{cfg['experiment']}.csv",index=False); stats=statistics(raw); stats.to_csv(root/"statistics"/f"{cfg['experiment']}.csv",index=False)
+    shown=["dataset","method","balanced_accuracy_mean","f1_score_mean","mcc_mean","selected_features_mean","jaccard_stability_mean","redundancy_mean","runtime_seconds_mean"]
+    table=agg[[c for c in shown if c in agg]].round(4).to_csv(index=False)
+    report_name="ablation_report.md" if cfg["experiment"] in {"ablation","final_ablation"} else f"{cfg['experiment']}_report.md"
+    (root/report_name).write_text("# Experiment report\n\n```csv\n"+table+"```\n\nStatistical results are exploratory unless run counts and datasets meet the registered protocol.\n",encoding="utf-8")
+    print(agg.to_string(index=False)); return raw
+if __name__=="__main__": main()

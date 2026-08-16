@@ -1,0 +1,10 @@
+experiment: budget_matched_ehoa
+datasets: [breast_cancer, wine]
+methods: [EHOA]
+seeds: [42, 123, 2026, 3407, 8675309]
+population: 8
+iterations: 16
+folds: 5
+test_size: 0.2
+workers: 1
+resume: true

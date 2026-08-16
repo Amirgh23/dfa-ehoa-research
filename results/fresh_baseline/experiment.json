@@ -1,0 +1,23 @@
+{
+  "paper": "https://doi.org/10.1007/s10586-026-05946-9",
+  "profile": "quick",
+  "python": "3.13.13",
+  "platform": "Windows-11-10.0.26100-SP0",
+  "parameters": {
+    "profile": "quick",
+    "datasets": "breast_cancer,wine",
+    "output": "results\\fresh_baseline",
+    "chaotic_map": "tent",
+    "alpha": 0.99,
+    "test_size": 0.2,
+    "seed": 42,
+    "hikers": 8,
+    "iterations": 8,
+    "folds": 5,
+    "runs": 1,
+    "patience": null,
+    "no_smote": false,
+    "explain": "none",
+    "verbose": false
+  }
+}

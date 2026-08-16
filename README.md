@@ -211,6 +211,30 @@ This repository implements a valid experimental framework, but the `quick` profi
 
 ## License and citation
 
+## DFA-EHOA research extension
+
+The unchanged `EHOA` baseline remains in `ehoa.py`. The separate `proposed/`
+package implements stability-feedback control and reliability/interaction-guided
+binary transitions with a 2x2 ablation. Install `PyYAML` and run:
+
+```powershell
+python run_experiments.py --config configs/dfa_ehoa.yaml
+python run_experiments.py --config configs/ablation.yaml
+python run_experiments.py --config configs/final_ablation.yaml
+python run_experiments.py --config configs/comprehensive_sensitivity.yaml
+python generate_artifacts.py --experiment pilot
+```
+
+Runs are checkpointed in `results/raw/`; completed dataset/method/seed tuples are
+skipped on resume. See `docs/dfa_ehoa_methodology.md`,
+`results/baseline_reproduction.md`, and `FINAL_RESEARCH_REPORT.md`. The small
+`configs/pilot.yaml` results are smoke/ablation evidence only, not paper-level claims.
+
+For datasets stored on another computer, copy
+`configs/home_datasets.example.yaml` to `configs/home_datasets.yaml`, set each CSV
+path and target-column name, and run it normally. Dataset files under `data/` are
+ignored by Git and will never be uploaded accidentally.
+
 The code is released under the [MIT License](LICENSE). For academic use, cite the original paper using the metadata provided in [`CITATION.cff`](CITATION.cff).
 
 ---

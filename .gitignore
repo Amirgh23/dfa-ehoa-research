@@ -5,3 +5,7 @@ __pycache__/
 legacy_results/
 docs/EHOA_Presentation_FA/
 *.inspect.ndjson
+data/*
+!data/README.md
+*.env
+.env.*

@@ -1,0 +1,23 @@
+experiment: sensitivity
+datasets: [breast_cancer]
+methods: [DFA-EHOA]
+seeds: [42, 123, 2026]
+population: 8
+iterations: 8
+folds: 5
+resume: true
+dfa:
+  stability_strategy: periodic
+  stability_interval: 2
+  bootstrap_count: 5
+  resample_fraction: 0.8
+  reliability_source: resampling
+  reliability_rho: 0.6
+  interaction_top_k: 30
+  lambda_stability: 0.5
+  lambda_interaction: 0.5
+  weight_schedule: adaptive
+sensitivity:
+  lambda_stability: [0.25, 0.5, 0.75]
+  lambda_interaction: [0.25, 0.5, 0.75]
+  bootstrap_count: [3, 5, 8]

@@ -1,0 +1,19 @@
+experiment: pilot
+datasets: [breast_cancer, wine]
+methods: [EHOA, SF-EHOA, IG-EHOA, DFA-EHOA]
+seeds: [42, 123, 2026]
+population: 4
+iterations: 3
+folds: 3
+test_size: 0.2
+workers: 1
+resume: true
+dfa:
+  stability_strategy: periodic
+  stability_interval: 1
+  bootstrap_count: 4
+  reliability_rho: 0.6
+  interaction_top_k: 30
+  lambda_stability: 0.5
+  lambda_interaction: 0.5
+  weight_schedule: adaptive
