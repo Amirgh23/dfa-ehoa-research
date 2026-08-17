@@ -1,9 +1,9 @@
 """Config-driven, resumable 2x2 DFA-EHOA experiment runner."""
 from __future__ import annotations
-import argparse, json, time
+import argparse, json, time, tracemalloc
 from pathlib import Path
 import numpy as np, pandas as pd, yaml
-from scipy.stats import friedmanchisquare, wilcoxon
+from scipy.stats import friedmanchisquare, rankdata, wilcoxon
 from sklearn.datasets import load_breast_cancer, load_wine
 from sklearn.model_selection import train_test_split
 from ehoa import EHOA
@@ -33,8 +33,22 @@ def cliffs_delta(a,b):
     a=np.asarray(a,float); b=np.asarray(b,float)
     return float(sum(x>y for x in a for y in b)-sum(x<y for x in a for y in b))/(len(a)*len(b))
 
+def paired_rank_biserial(a,b):
+    differences=np.asarray(a,float)-np.asarray(b,float); nonzero=differences[differences!=0]
+    if not len(nonzero): return 0.0
+    ranks=rankdata(np.abs(nonzero))
+    positive=ranks[nonzero>0].sum(); negative=ranks[nonzero<0].sum()
+    return float((positive-negative)/(positive+negative))
+
+def paired_bootstrap_ci(a,b,seed=20260817,repeats=5000):
+    differences=np.asarray(a,float)-np.asarray(b,float)
+    if not len(differences): return np.nan,np.nan
+    rng=np.random.default_rng(seed); indices=rng.integers(0,len(differences),(repeats,len(differences)))
+    estimates=np.median(differences[indices],axis=1)
+    return tuple(float(v) for v in np.quantile(estimates,[.025,.975]))
+
 def aggregate(raw):
-    numeric=[c for c in ["balanced_accuracy","f1_score","mcc","selected_features","redundancy","interaction_quality","runtime_seconds","jaccard_stability","nogueira_stability"] if c in raw]
+    numeric=[c for c in ["balanced_accuracy","f1_score","mcc","roc_auc","pr_auc","sensitivity","specificity","selected_features","redundancy","interaction_quality","runtime_seconds","classifier_seconds","peak_memory_mb","jaccard_stability","nogueira_stability"] if c in raw]
     rows=[]
     for keys,g in raw.groupby(["dataset","method"]):
         row={"dataset":keys[0],"method":keys[1],"runs":len(g)}
@@ -54,7 +68,8 @@ def statistics(raw):
                 if method=="EHOA": continue
                 try: stat,p=wilcoxon(pivot[method],pivot["EHOA"])
                 except ValueError: stat,p=0.,1.
-                diff=pivot[method]-pivot["EHOA"]; rows.append(dict(dataset=dataset,test="wilcoxon",comparison=f"{method} vs EHOA",statistic=stat,p_value=p,effect_median=diff.median(),cliffs_delta=cliffs_delta(pivot[method],pivot["EHOA"])))
+                diff=pivot[method]-pivot["EHOA"]; ci_low,ci_high=paired_bootstrap_ci(pivot[method],pivot["EHOA"])
+                rows.append(dict(dataset=dataset,test="wilcoxon",comparison=f"{method} vs EHOA",statistic=stat,p_value=p,effect_median=diff.median(),effect_ci95_low=ci_low,effect_ci95_high=ci_high,paired_rank_biserial=paired_rank_biserial(pivot[method],pivot["EHOA"]),cliffs_delta=cliffs_delta(pivot[method],pivot["EHOA"]),wins=int((diff>0).sum()),ties=int((diff==0).sum()),losses=int((diff<0).sum())))
     frame=pd.DataFrame(rows)
     if not frame.empty:
         pair=frame.test=="wilcoxon"; ordered=frame.loc[pair].sort_values("p_value"); m=len(ordered); adjusted=[]; running=0.0
@@ -84,9 +99,10 @@ def main(argv=None):
           if (dataset,label,seed) in done: continue
           common=dict(n_hikers=cfg["population"],max_iter=cfg["iterations"],n_folds=cfg["folds"],random_state=seed,verbose=False)
           selector=EHOA(**common) if method=="EHOA" else DFAEHOA(**common,feedback_enabled=VARIANTS[method][0],transition_mode=VARIANTS[method][1],**dfa_parameters)
-          mask,_,features=selector.fit(Xtr,ytr); metric,_,_=evaluate_classifiers(Xtr,ytr,Xte,yte,features,random_state=seed); knn=metric[metric.classifier=="knn"].iloc[0]
+          tracemalloc.start(); mask,_,features=selector.fit(Xtr,ytr); _,peak=tracemalloc.get_traced_memory(); tracemalloc.stop()
+          tick=time.perf_counter(); metric,_,_=evaluate_classifiers(Xtr,ytr,Xte,yte,features,random_state=seed); classifier_seconds=time.perf_counter()-tick; knn=metric[metric.classifier=="knn"].iloc[0]
           key=(dataset,label); masks.setdefault(key,[]).append(mask.astype(int))
-          row=dict(dataset=dataset,method=label,seed=seed,fold="holdout",total_features=X.shape[1],selected_features=len(features),feature_ratio=len(features)/X.shape[1],fitness=selector.best_fitness,evaluations=selector.evaluations_,runtime_seconds=selector.runtime_seconds_,redundancy=subset_redundancy(Xtr,mask),parameters=json.dumps(dfa_parameters,sort_keys=True),selected_indices=json.dumps(features.tolist()),**{k:float(knn[k]) for k in ["accuracy","balanced_accuracy","f1_score","mcc","sensitivity","specificity"]})
+          row=dict(dataset=dataset,method=label,seed=seed,fold="repeated_stratified_holdout",total_features=X.shape[1],selected_features=len(features),feature_ratio=len(features)/X.shape[1],fitness=selector.best_fitness,evaluations=selector.evaluations_,runtime_seconds=selector.runtime_seconds_,classifier_seconds=classifier_seconds,peak_memory_mb=peak/(1024**2),redundancy=subset_redundancy(Xtr,mask),parameters=json.dumps(dfa_parameters,sort_keys=True),selected_indices=json.dumps(features.tolist()),**{k:float(knn[k]) for k in ["accuracy","balanced_accuracy","f1_score","mcc","roc_auc","pr_auc","sensitivity","specificity"]})
           rows.append(row); pd.DataFrame(rows).to_csv(raw_path,index=False)
           safe_label=label.replace("[","_").replace("]","").replace("=","-")
           selector.history_frame().assign(dataset=dataset,method=label,seed=seed).to_csv(root/"raw"/f"trace_{cfg['experiment']}_{dataset}_{safe_label}_{seed}.csv",index=False)

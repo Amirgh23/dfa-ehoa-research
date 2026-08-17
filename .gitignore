@@ -9,3 +9,5 @@ data/*
 !data/README.md
 *.env
 .env.*
+results/*.log
+tmp/pdfs/

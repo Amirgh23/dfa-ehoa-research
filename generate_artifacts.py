@@ -1,5 +1,5 @@
 """Generate deterministic paper-ready pilot figures and CSV/Markdown/LaTeX tables."""
-import argparse
+import argparse, json
 from pathlib import Path
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -17,6 +17,21 @@ def main():
     fig,ax=plt.subplots(figsize=(7,5));
     for method,g in raw.groupby("method"): ax.scatter(g.jaccard_stability,g.balanced_accuracy,label=method,alpha=.8)
     ax.set(xlabel="Mean Jaccard stability",ylabel="Balanced accuracy",title="Stability vs predictive performance"); ax.legend(); ax.grid(alpha=.2); save(fig,figures/f"{a.experiment}_stability_vs_performance.png")
+    # Selection-frequency profiles make stability differences inspectable rather
+    # than reducing them to one scalar.
+    for dataset,g in raw.groupby("dataset"):
+        methods=list(g.method.unique()); total=int(g.total_features.iloc[0]); frequencies=[]
+        for method in methods:
+            masks=[]
+            for value in g[g.method==method].selected_indices:
+                mask=[0]*total
+                for index in json.loads(value): mask[int(index)]=1
+                masks.append(mask)
+            frequencies.append(pd.DataFrame(masks).mean(axis=0).to_numpy())
+        fig,ax=plt.subplots(figsize=(max(8,total*.28),3.8))
+        image=ax.imshow(frequencies,aspect="auto",vmin=0,vmax=1,cmap="viridis")
+        ax.set(yticks=range(len(methods)),yticklabels=methods,xlabel="Feature index",title=f"Selection frequency - {dataset}")
+        fig.colorbar(image,ax=ax,label="Selection frequency"); save(fig,figures/f"{a.experiment}_{dataset}_feature_frequency.png")
     traces=list((a.results/"raw").glob(f"trace_{a.experiment}_*_DFA-EHOA_*.csv"))
     if traces:
         trace=pd.read_csv(traces[0]); columns=[("fitness","Convergence"),("nogueira_stability","Stability"),("population_diversity","Population diversity"),("sweep_factor","Sweep factor"),("inertia","Inertia"),("selected_features","Selected features")]

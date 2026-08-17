@@ -22,6 +22,20 @@ def test_controller_and_transition_bounds():
     p=transition_probabilities(np.array([-100,100.]),np.ones(2),np.ones(2)); assert np.all((p>=0)&(p<=1))
     assert sample_mask(np.zeros(4),np.random.default_rng(1)).any()
 
+def test_regime_controller_avoids_instability_positive_feedback():
+    controller=FeedbackController(smoothing=0)
+    # Late instability with healthy diversity consolidates (below baseline).
+    sf_late,_=controller.update(2,.7,.1,.5,0,(1,3),(.4,.9),progress=.9)
+    # Early population collapse drives exploration (above baseline).
+    sf_early,_=controller.update(2,.7,.9,.01,1,(1,3),(.4,.9),progress=.1)
+    assert sf_late < 2 < sf_early
+
+def test_entropy_confidence_gates_ambiguous_reliability():
+    z=np.zeros(2); r=np.array([1.,-1.]); interaction=np.zeros(2)
+    neutral=transition_probabilities(z,r,interaction,mode="stability",reliability_confidence=np.zeros(2))
+    certain=transition_probabilities(z,r,interaction,mode="stability",reliability_confidence=np.ones(2))
+    np.testing.assert_allclose(neutral,.5); assert certain[0]>.5 and certain[1]<.5
+
 def test_stagnation():
     d=StagnationDetector(2); assert not d.update(1); assert not d.update(1); assert d.update(1)
 

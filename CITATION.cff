@@ -1,13 +1,13 @@
 cff-version: 1.2.0
-message: "If you use this implementation, please cite the original EHOA paper."
-title: "EHOA Feature Selection: Reproducible Python Implementation"
+message: "If you use this research software, cite both this software and the original EHOA paper."
+title: "DFA/SFIG-EHOA: Stability-Feedback Interaction-Guided Feature Selection"
 type: software
 authors:
   - name: "Amirgh23"
-repository-code: "https://github.com/Amirgh23/ehoa-feature-selection"
+repository-code: "https://github.com/Amirgh23/dfa-ehoa-research"
 license: MIT
-version: 1.0.0
-date-released: 2026-07-21
+version: 2.0.0
+date-released: 2026-08-17
 preferred-citation:
   type: article
   title: "An enhanced Hiking optimization algorithm for accurate and interpretable feature selection in medical data classification"

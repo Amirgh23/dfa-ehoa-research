@@ -8,19 +8,30 @@ For (N) samples, (D) features, population (P), and (T) iterations, agent positio
 
 Repeated class-stratified bootstrap samples are drawn exclusively from training data. Each resample builds a fixed-cardinality target-relevant solution using mutual-information ranking; these independent lightweight solutions estimate selection frequencies without recursively running DFA-EHOA. The cheaper population-mask proxy remains configurable but is not used by the principal protocol. Frequencies use exponential smoothing (q_j(t)=\rho q_j(t-1)+(1-\rho)\hat q_j(t)). Warm-up, clipping, smoothing, periodic/event-triggered updates, and a nonzero baseline transition probability reduce circular reinforcement. Jaccard and chance-corrected Nogueira stability are both reported.
 
-## Closed-loop controller
+## Regime-aware closed-loop controller
 
-Let (U_t=1-S_t), (L_t=1-\min(1,D_t/0.5)), and (G_t) be normalized stagnation. The exploration pressure is
+Let (U_t=1-S_t), (r_t=\min(1,D_t/0.5)), (L_t=1-r_t),
+(G_t) be normalized stagnation and (\tau=t/T). The two corroborated drives are
 
-\[E_t=\eta_sU_t+\eta_dL_t+\eta_gG_t.\]
+\[E_t=L_t[0.5(1-\tau)+0.5G_t], \qquad C_t=U_t r_t\tau.\]
 
-Then (SF_t=clip(SF_t^{base}(1+E_t),SF_{min},SF_{max})) and (\omega_t=clip(\omega_t^{base}+0.25E_t,\omega_{min},\omega_{max})), followed by exponential controller smoothing. Low stability, collapsed diversity, or stagnation increases bounded exploration.
+The signed adjustment is (A_t=\eta_EE_t-\eta_CC_t). Then
+(SF_t=clip(SF_t^{base}(1+A_t),SF_{min},SF_{max})) and
+(\omega_t=clip(\omega_t^{base}+0.25A_t,\omega_{min},\omega_{max})), followed
+by controller smoothing. Thus, instability is not an exploration trigger on its
+own: early collapse/stagnation drives exploration, while late uncertainty with
+healthy diversity drives consolidation. This is the key correction over the
+legacy additive-pressure prototype.
 
 ## Interaction-guided transition
 
 Target mutual information supplies relevance. For candidate (j), cached absolute association to the current subset supplies redundancy (A_j(S)). The normalized score is (I_j(S)=MI(j;y)(1-A_j(S))-A_j(S)). Pearson association is deliberately **not** called interaction; it is only the inexpensive redundancy term. Top-k target-relevant neighborhoods bound memory and do not pre-filter the fitness search space.
 
-\[p_{ij}(t)=\sigma(x_{ij}(t)+\lambda_s(t)R_j(t)+\lambda_i(t)I_j(S_i)).\]
+Reliability evidence is entropy gated. With binary entropy (H_2),
+(c_j=1-H_2(q_j)) is near zero for ambiguous (q_j\approx0.5) and approaches one
+for consistent evidence. The transition is
+
+\[p_{ij}(t)=\sigma(x_{ij}(t)+\lambda_s(t)c_j(t)R_j(t)+\lambda_i(t)I_j(S_i)).\]
 
 Constant, linear and adaptive schedules are supported. Modes `baseline`, `stability`, `interaction`, and `dual` create the required 2x2 ablation.
 
@@ -29,7 +40,9 @@ Constant, linear and adaptive schedules are supported. Modes `baseline`, `stabil
 1. **Baseline EHOA:** initialize chaotic positions; sample masks; evaluate inner CV; update personal/global best; linearly update SF/inertia; update velocity/position; repeat.
 2. **Stability estimation:** collect current masks; optionally bootstrap masks; calculate/smooth frequencies; derive reliability; calculate Jaccard/Nogueira.
 3. **Guided transition:** calculate scheduled weights; combine position, reliability and target-relevant redundancy score; sigmoid; Bernoulli sample; repair empty mask.
-4. **Controller:** calculate uncertainty, low-diversity and stagnation signals; adjust and clip SF/inertia; smooth against previous output.
+4. **Controller:** calculate exploration and consolidation drives from progress,
+   uncertainty, diversity and stagnation; adjust and clip SF/inertia; smooth
+   against the previous output.
 5. **DFA-EHOA:** fit interaction model on training data; run baseline loop with Algorithms 2–4; record all controller telemetry.
 
 ## Complexity and ablation

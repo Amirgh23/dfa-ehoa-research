@@ -23,6 +23,8 @@ from sklearn.metrics import (
     confusion_matrix,
     f1_score,
     matthews_corrcoef,
+    average_precision_score,
+    roc_auc_score,
     precision_score,
     recall_score,
 )
@@ -276,12 +278,13 @@ def evaluate_classifiers(
         model = clone(template)
         model.fit(X_train_p[:, selected], y_train_p)
         prediction = model.predict(X_test_p[:, selected])
-        rows.append({"classifier": name, **calculate_metrics(y_test, prediction)})
+        score = model.predict_proba(X_test_p[:, selected])
+        rows.append({"classifier": name, **calculate_metrics(y_test, prediction, score)})
         fitted[name] = model
     return pd.DataFrame(rows), fitted, (imputer, scaler)
 
 
-def calculate_metrics(y_true: Array, y_pred: Array) -> dict[str, float]:
+def calculate_metrics(y_true: Array, y_pred: Array, y_score: Array | None = None) -> dict[str, float]:
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
     labels = np.unique(np.concatenate([y_true, y_pred]))
@@ -298,7 +301,7 @@ def calculate_metrics(y_true: Array, y_pred: Array) -> dict[str, float]:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         specificity = specificity_values[1] if len(labels) == 2 else float(np.mean(specificity_values))
-        return {
+        metrics = {
             "accuracy": float(accuracy_score(y_true, y_pred)),
             "precision": float(precision_score(y_true, y_pred, average=average, zero_division=0)),
             "sensitivity": float(recall_score(y_true, y_pred, average=average, zero_division=0)),
@@ -307,6 +310,21 @@ def calculate_metrics(y_true: Array, y_pred: Array) -> dict[str, float]:
             "balanced_accuracy": float(balanced_accuracy_score(y_true, y_pred)),
             "mcc": float(matthews_corrcoef(y_true, y_pred)),
         }
+        if y_score is not None:
+            score = np.asarray(y_score, dtype=float)
+            try:
+                if len(labels) == 2:
+                    positive = score[:, 1] if score.ndim == 2 else score
+                    metrics["roc_auc"] = float(roc_auc_score(y_true, positive))
+                    metrics["pr_auc"] = float(average_precision_score(y_true, positive))
+                else:
+                    one_hot = np.eye(len(labels))[np.searchsorted(labels, y_true)]
+                    metrics["roc_auc"] = float(roc_auc_score(one_hot, score, average="macro", multi_class="ovr"))
+                    metrics["pr_auc"] = float(average_precision_score(one_hot, score, average="macro"))
+            except ValueError:
+                metrics["roc_auc"] = np.nan
+                metrics["pr_auc"] = np.nan
+        return metrics
 
 
 # Backward-compatible name, now safe and intentionally training-only.
