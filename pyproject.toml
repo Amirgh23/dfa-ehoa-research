@@ -1,10 +1,20 @@
 [project]
-name = "ehoa-feature-selection"
-version = "1.0.0"
-description = "Leakage-free, reproducible EHOA feature selection implementation"
+name = "dfa-ehoa-research"
+version = "2.0.0"
+description = "Leakage-safe DFA/SFIG-EHOA feature-selection research framework"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
+dependencies = [
+  "numpy==2.3.5",
+  "scipy==1.16.3",
+  "pandas==3.0.3",
+  "scikit-learn==1.8.0",
+  "imbalanced-learn==0.14.1",
+  "matplotlib==3.10.8",
+  "seaborn==0.13.2",
+  "PyYAML==6.0.2",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

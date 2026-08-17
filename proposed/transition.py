@@ -10,9 +10,12 @@ def scheduled_weight(value: float, iteration: int, maximum: int, strategy: str,
     raise ValueError("strategy must be constant, linear, or adaptive")
 
 def transition_probabilities(position, reliability, interaction, *, mode="dual",
-                             lambda_stability=0.5, lambda_interaction=0.5):
+                             lambda_stability=0.5, lambda_interaction=0.5,
+                             reliability_confidence=None):
     z = np.asarray(position, float).copy()
-    if mode in {"stability", "dual"}: z += lambda_stability*np.clip(reliability, -1, 1)
+    if mode in {"stability", "dual"}:
+        confidence = 1.0 if reliability_confidence is None else np.clip(reliability_confidence, 0, 1)
+        z += lambda_stability*np.clip(reliability, -1, 1)*confidence
     if mode in {"interaction", "dual"}: z += lambda_interaction*np.clip(interaction, -1, 1)
     if mode not in {"baseline", "stability", "interaction", "dual"}: raise ValueError("invalid transition mode")
     return sigmoid(z)

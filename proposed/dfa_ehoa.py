@@ -24,7 +24,7 @@ class DFAEHOA(EHOA):
                  resample_fraction=.8, reliability_source="resampling",
                  lambda_stability=.5, lambda_interaction=.5, weight_schedule="adaptive",
                  stagnation_patience=5, stagnation_epsilon=1e-6, controller=None, **kwargs):
-        eta_stability=kwargs.pop("eta_stability",.35); eta_diversity=kwargs.pop("eta_diversity",.20); eta_stagnation=kwargs.pop("eta_stagnation",.30)
+        eta_exploration=kwargs.pop("eta_exploration",.45); eta_consolidation=kwargs.pop("eta_consolidation",.30)
         super().__init__(*args, **kwargs)
         self.feedback_enabled, self.transition_mode = feedback_enabled, transition_mode
         self.stability_interval, self.stability_strategy, self.warmup = stability_interval, stability_strategy, warmup
@@ -34,7 +34,7 @@ class DFAEHOA(EHOA):
         self.lambda_stability, self.lambda_interaction = lambda_stability, lambda_interaction
         self.weight_schedule = weight_schedule
         self.stagnation_patience, self.stagnation_epsilon = stagnation_patience, stagnation_epsilon
-        self.controller = controller or FeedbackController(eta_stability,eta_diversity,eta_stagnation)
+        self.controller = controller or FeedbackController(eta_exploration,eta_consolidation)
 
     def _should_update(self, iteration, improved, detector, diversity, previous_diversity):
         if iteration <= self.warmup: return False
@@ -67,7 +67,8 @@ class DFAEHOA(EHOA):
             stagnation=detector.signal
             if self.feedback_enabled and iteration>self.warmup:
                 sf,inertia=self.controller.update(sf_base,w_base,max(0,nogueira),diversity,stagnation,
-                    (self.sf_min,self.sf_max),(self.w_min,self.w_max),previous_control); previous_control=(sf,inertia)
+                    (self.sf_min,self.sf_max),(self.w_min,self.w_max),previous_control,
+                    progress=iteration/self.max_iter); previous_control=(sf,inertia)
             else: sf,inertia=sf_base,w_base
             improved=False; new_masks=[]
             for i in range(self.n_hikers):
@@ -77,7 +78,13 @@ class DFAEHOA(EHOA):
                 ls=scheduled_weight(self.lambda_stability,iteration,self.max_iter,self.weight_schedule,1-max(0,nogueira))
                 li=scheduled_weight(self.lambda_interaction,iteration,self.max_iter,self.weight_schedule,diversity)
                 local_interaction=self._interaction_model.score(self.best_solution) if self.transition_mode in {"interaction","dual"} else interaction
-                mask=sample_mask(transition_probabilities(population[i],reliability,local_interaction,mode=self.transition_mode,lambda_stability=ls,lambda_interaction=li),self._rng)
+                if q is None:
+                    confidence=np.zeros(n_features)
+                else:
+                    q_safe=np.clip(q,1e-12,1-1e-12)
+                    entropy=-(q_safe*np.log2(q_safe)+(1-q_safe)*np.log2(1-q_safe))
+                    confidence=1-entropy
+                mask=sample_mask(transition_probabilities(population[i],reliability,local_interaction,mode=self.transition_mode,lambda_stability=ls,lambda_interaction=li,reliability_confidence=confidence),self._rng)
                 new_masks.append(mask); f,a,_=self._evaluate(mask)
                 if f<personal_fitness[i]: personal_fitness[i]=f; personal_positions[i]=population[i].copy()
                 improved |= self._consider_global(population[i],mask,f,a)
@@ -94,9 +101,15 @@ class DFAEHOA(EHOA):
             previous_diversity=diversity
             self.convergence_history.append(self.best_fitness); self.accuracy_history.append(self.best_accuracy)
             self.feature_count_history.append(len(self.best_features)); self.diversity_history.append(diversity)
-            self.telemetry_.append(dict(iteration=iteration,fitness=self.best_fitness,cv_accuracy=self.best_accuracy,
+            finite=personal_fitness[np.isfinite(personal_fitness)]
+            delta=sf-sf_base
+            controller_state="explore" if delta>1e-9 else ("consolidate" if delta < -1e-9 else "baseline")
+            self.telemetry_.append(dict(iteration=iteration,fitness=self.best_fitness,
+                mean_population_fitness=float(finite.mean()) if len(finite) else np.nan,
+                cv_accuracy=self.best_accuracy,
                 selected_features=len(self.best_features),population_diversity=diversity,jaccard_stability=jaccard,
                 nogueira_stability=nogueira,sweep_factor=sf,inertia=inertia,stagnation_counter=detector.counter))
+            self.telemetry_[-1]["controller_state"]=controller_state
         self.stability_seconds_=stability_seconds; self.runtime_seconds_=time.perf_counter()-started
         self.result_=EHOAResult(self.best_solution.copy(),self.best_features.copy(),self.best_accuracy,self.best_fitness,self.runtime_seconds_,self.evaluations_)
         return self.best_solution.copy(),self.best_accuracy,self.best_features.copy()

@@ -2,4 +2,8 @@
 
 from .dfa_ehoa import DFAEHOA
 
-__all__ = ["DFAEHOA"]
+# SFIG-EHOA is the descriptive name used in the manuscript; DFA-EHOA is kept
+# as the stable API/configuration name for backward compatibility.
+SFIGEHOA = DFAEHOA
+
+__all__ = ["DFAEHOA", "SFIGEHOA"]

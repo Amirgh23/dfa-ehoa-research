@@ -76,6 +76,8 @@ def test_held_out_evaluation_keeps_test_alignment():
     assert len(metrics) == 4
     assert set(models) == {"knn", "logistic_regression", "svm", "random_forest"}
     assert metrics["accuracy"].between(0, 1).all()
+    assert metrics["roc_auc"].between(0, 1).all()
+    assert metrics["pr_auc"].between(0, 1).all()
 
 
 def test_binary_specificity_is_true_negative_rate():
