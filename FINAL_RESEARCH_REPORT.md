@@ -143,6 +143,19 @@ also exposed because stochastic cache hits make effective counts differ.
 | Full method is computationally efficient | Rejected | about 3x runtime |
 | Full method is universally superior/state of the art | Rejected | two datasets, no broad competitor suite |
 | A meaningful trade-off exists on at least one benchmark | Accepted, scoped | Breast Cancer: fewer features and higher Nogueira with small BA loss |
+| Full DFA-EHOA is Pareto non-dominated in BA/stability/feature count | Accepted for both datasets | No variant is no-worse on all three objectives; full method dominates SF-EHOA on Wine |
+
+## Acceptance-oriented positioning
+
+The paper should be defended as a **mechanism and trade-off contribution**, not
+as another accuracy-only optimizer. Its strongest point is the separation of
+two feedback channels: corroborated population-level evidence changes
+continuous search dynamics, while entropy-gated feature-level evidence changes
+the discrete transition. The three falsifiable hypotheses are stability gain,
+interaction-guided trade-off improvement, and Pareto non-dominance. Current
+evidence supports the first descriptively and the third on both datasets; the
+second remains dataset-dependent. This framing is stronger and more honest than
+claiming state-of-the-art accuracy from a two-dataset study.
 
 ## Limitations and threats to validity
 
