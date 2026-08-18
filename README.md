@@ -58,6 +58,7 @@ python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 .venv\Scripts\python -m pytest -q
 .venv\Scripts\python run_experiments.py --config configs\paper_revised.yaml
+.venv\Scripts\python run_experiments.py --config configs\nested_validation.yaml
 .venv\Scripts\python generate_artifacts.py --experiment paper_revised
 ```
 
@@ -123,6 +124,7 @@ python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 .venv\Scripts\python -m pytest -q
 .venv\Scripts\python run_experiments.py --config configs\paper_revised.yaml
+.venv\Scripts\python run_experiments.py --config configs\nested_validation.yaml
 .venv\Scripts\python generate_artifacts.py --experiment paper_revised
 ```
 

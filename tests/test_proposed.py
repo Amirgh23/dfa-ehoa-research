@@ -5,6 +5,7 @@ from proposed.feedback_controller import FeedbackController
 from proposed.transition import transition_probabilities, sample_mask
 from proposed.interaction import InteractionModel, subset_interaction_quality
 from proposed import DFAEHOA
+from run_experiments import evaluation_splits, statistics
 
 def test_stability_metrics_known_cases():
     same=np.array([[1,0,1],[1,0,1]],bool); disjoint=np.array([[1,0],[0,1]],bool)
@@ -64,3 +65,22 @@ def test_training_resampling_is_deterministic_stratified_and_nonempty():
     a=resampled_feature_solutions(X,y,4,3,np.random.default_rng(10))
     b=resampled_feature_solutions(X,y,4,3,np.random.default_rng(10))
     np.testing.assert_array_equal(a,b); assert a.shape==(4,7); assert np.all(a.sum(axis=1)==3)
+
+def test_nested_outer_splits_are_deterministic_disjoint_and_complete():
+    X,y=make_classification(n_samples=60,n_features=6,random_state=12)
+    cfg={"evaluation_protocol":"repeated_nested_cv","seeds":[7],"outer_folds":3}
+    first=list(evaluation_splits(X,y,cfg)); second=list(evaluation_splits(X,y,cfg))
+    assert [(a,b,c) for a,b,c,_,_ in first]==[(a,b,c) for a,b,c,_,_ in second]
+    tests=[]
+    for _,_,_,train,test in first:
+        assert not set(train)&set(test); tests.extend(test.tolist())
+    assert sorted(tests)==list(range(len(y)))
+
+def test_statistics_handle_all_tied_methods_without_nan():
+    rows=[]
+    for seed in [1,2,3]:
+        for method in ["EHOA","SF-EHOA","IG-EHOA","DFA-EHOA"]:
+            rows.append({"dataset":"tiny","method":method,"seed":seed,"fold":"outer_1","balanced_accuracy":.5})
+    frame=statistics(__import__("pandas").DataFrame(rows))
+    assert np.isfinite(frame[["statistic","p_value"]]).all().all()
+    assert frame.loc[frame.test=="friedman","p_value"].iloc[0]==1.0

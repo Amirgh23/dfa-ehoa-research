@@ -1,0 +1,24 @@
+experiment: nested_validation
+evaluation_protocol: repeated_nested_cv
+datasets: [breast_cancer, wine]
+methods: [EHOA, SF-EHOA, IG-EHOA, DFA-EHOA]
+seeds: [42, 123]
+outer_folds: 3
+population: 5
+iterations: 4
+folds: 3
+workers: 1
+resume: true
+dfa:
+  stability_strategy: periodic
+  stability_interval: 2
+  bootstrap_count: 5
+  resample_fraction: 0.8
+  reliability_source: resampling
+  reliability_rho: 0.6
+  interaction_top_k: 30
+  lambda_stability: 0.5
+  lambda_interaction: 0.5
+  weight_schedule: adaptive
+  eta_exploration: 0.45
+  eta_consolidation: 0.30
