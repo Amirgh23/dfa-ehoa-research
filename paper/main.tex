@@ -7,12 +7,12 @@
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{float}
-\graphicspath{{results/figures/}}
+\graphicspath{{../results/figures/}}
 \setlist{nosep,leftmargin=*}
-\title{DFA/SFIG-EHOA: Regime-Aware Stability Feedback and\\
-Confidence-Gated Interaction Guidance for Feature Selection}
+\title{SP-EHOA: A Safe Dimension-Aware Portfolio with\\
+Memetic Refinement for EHOA Feature Selection}
 \author{Amirgh23\\Independent Research Project}
-\date{17 August 2026}
+\date{18 August 2026}
 
 \begin{document}
 \maketitle
@@ -22,26 +22,28 @@ Enhanced Hiking Optimization Algorithm (EHOA) is a recent wrapper feature
 selector that combines chaotic initialization, a dynamic sweep factor, and a
 binary transfer. Its search dynamics, however, do not react to the
 reproducibility of selected features under data perturbation. This paper
-introduces DFA/SFIG-EHOA, a modular extension with (i) a regime-aware controller
+introduces and evaluates a sequence of modular EHOA extensions with (i) a regime-aware controller
 that maps cross-resampling stability, population diversity, progress, and
 stagnation to bounded sweep and inertia adjustments, and (ii) a binary
 transition guided by entropy-gated feature reliability and a training-only
 relevance/redundancy signal. Instability alone is not allowed to trigger more
 exploration, preventing a self-reinforcing instability loop. The baseline
-fitness is unchanged. A paired 2-by-2 ablation was conducted on Breast Cancer
-Wisconsin and Wine with ten fixed seeds and repeated stratified hold-outs. The
-full method changed mean balanced accuracy by -0.0056 and 0.0000 relative to
-EHOA, while improving chance-corrected Nogueira stability by 0.0726 and 0.0365.
-On Breast Cancer it also selected 1.4 fewer features. No Holm-corrected
-predictive comparison was significant, and runtime was approximately three
-times the baseline. The evidence therefore supports a scoped
-stability--reduction trade-off, not universal predictive superiority. All 80
-runs, traces, configurations, tests, figures, and statistical outputs are
-released with the implementation.
+fitness is unchanged. Because the full feedback method did not establish
+predictive superiority, eight hypotheses were compared on common repeated
+nested-CV splits. The tournament selected memetic EHOA (M-EHOA) for the
+low-dimensional regime, while a failed interaction-guided portfolio motivated
+SP-EHOA: use M-EHOA below 20 features and preserve exact baseline EHOA behavior
+otherwise. Across three experimental phases and 45 paired Wine observations,
+M-EHOA improved balanced accuracy by 0.01243 on average (median 0.01389;
+Wilcoxon $p=0.001245$). In a fresh 90-run confirmation, SP-EHOA exactly matched
+EHOA on every Breast Cancer fold and improved Wine mean balanced accuracy from
+0.95771 to 0.96203. The evidence supports a safe, regime-specific follow-up,
+not universal superiority. Code, all negative results, 450 tournament and
+confirmation runs, traces, and statistical outputs are released.
 \end{abstract}
 
-\noindent\textbf{Keywords:} feature selection; stability; metaheuristic;
-Hiking Optimization Algorithm; interaction guidance; reproducibility
+\noindent\textbf{Keywords:} feature selection; memetic optimization; safe
+portfolio; Hiking Optimization Algorithm; nested cross-validation; reproducibility
 
 \section{Introduction}
 Feature selection (FS) seeks a compact subset that preserves predictive signal.
@@ -74,7 +76,12 @@ The contributions are:
   untouched; and
   \item a leakage-safe, fully retained experiment record with predictive,
   reduction, stability, redundancy, cost, and non-parametric statistical
-  evidence.
+  evidence;
+  \item a deterministic best-improvement memetic refinement that evaluates
+  one-feature add/remove neighbours using training-only CV; and
+  \item SP-EHOA, a dimension-aware safe portfolio that activates the repeatedly
+  supported refinement below 20 features and otherwise reproduces baseline
+  EHOA exactly.
 \end{itemize}
 
 \section{Method}
@@ -147,6 +154,26 @@ the interaction model adds mutual information and a top-$K$ correlation cache.
 Controller arithmetic is $O(T)$. Runtime and evaluation counts are measured
 rather than inferred because stochastic cache hits change effective cost.
 
+\subsection{Memetic refinement and safe portfolio}
+M-EHOA first completes the ordinary EHOA search. Starting from its incumbent
+mask, it then enumerates every one-bit add/remove neighbour and accepts the
+strict best improvement under the same training-only CV objective. At most two
+best-improvement rounds are used. This separates global stochastic search from
+deterministic local exploitation and records the additional evaluations.
+
+The selected portfolio is
+\begin{equation}
+ \mathrm{SP\mbox{-}EHOA}(X,y)=
+ \begin{cases}
+  \mathrm{M\mbox{-}EHOA}(X,y), & D<20,\\
+  \mathrm{EHOA}(X,y), & D\geq20.
+ \end{cases}
+\end{equation}
+The high-dimensional branch instantiates the unmodified baseline with the same
+seed and parameters; equality is therefore structural rather than inferred
+from a non-significant test. The threshold is a fixed proof-of-concept rule
+selected after the tournament and must be externally validated.
+
 \section{Experimental Protocol}
 The study uses the versioned scikit-learn Breast Cancer Wisconsin Diagnostic
 (30 features, two classes) and Wine Recognition (13 features, three classes)
@@ -169,8 +196,12 @@ paired rank-biserial effect size, win/tie/loss counts, and a 5,000-resample
 bootstrap interval for the paired median difference. These tests follow common
 non-parametric comparison guidance \cite{demsar2006statistics}; with only two
 datasets, inference is reported per dataset and not generalized globally.
-Repeated nested CV was computationally unavailable. Repeated stratified
-hold-out is an explicitly weaker alternative and a limitation.
+The original ablation used repeated stratified hold-out. All follow-up
+innovation comparisons use repeated nested CV with three outer folds per seed;
+the selector sees only each outer-training partition. The final tournament uses
+five previously unused seeds, eight methods, and 240 paired runs. A separate
+120-run portfolio confirmation and a final 90-run SP-EHOA confirmation use new
+seed sets. No intermediate result is deleted.
 
 \section{Results}
 \begin{table}[H]
@@ -237,6 +268,60 @@ Full-method runtime was 3.18 times baseline on Breast Cancer and 3.01 times on
 Wine. The overhead is expected from resampling and interaction estimation and
 is not hidden by nominal same-iteration comparisons.
 
+\subsection{Innovation tournament and SP-EHOA confirmation}
+\begin{table}[H]
+\centering
+\caption{Common-split innovation tournament. Values are mean outer balanced accuracy.}
+\label{tab:tournament}
+\small
+\begin{tabular}{lcc}
+\toprule
+Method & Breast Cancer & Wine\\
+\midrule
+EHOA & 0.95266 & 0.94943\\
+SF-EHOA & 0.94825 & 0.94943\\
+IG-EHOA & \textbf{0.95388} & 0.95497\\
+DFA-EHOA & 0.95153 & 0.95960\\
+ECG-EHOA & 0.95293 & 0.95122\\
+M-EHOA & 0.95011 & \textbf{0.96345}\\
+A-EHOA & 0.94969 & 0.95624\\
+G-EHOA & 0.95292 & 0.95233\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+IG-EHOA's Breast Cancer lead did not repeat in the independent portfolio
+confirmation and that hypothesis was rejected. M-EHOA retained a positive Wine
+effect in all three phases. Table~\ref{tab:spconfirm} reports the final,
+previously unused seed set.
+
+\begin{table}[H]
+\centering
+\caption{Final SP-EHOA confirmation over 15 outer folds per dataset.}
+\label{tab:spconfirm}
+\small
+\begin{tabular}{llccc}
+\toprule
+Dataset & Method & BA mean $\pm$ SD & Features & Runtime (s)\\
+\midrule
+Breast & EHOA & $0.95181\pm0.01154$ & 16.00 & 0.74\\
+Breast & M-EHOA & $0.94965\pm0.01388$ & 15.27 & 2.46\\
+Breast & SP-EHOA & $0.95181\pm0.01154$ & 16.00 & 0.73\\
+\midrule
+Wine & EHOA & $0.95771\pm0.02495$ & 7.67 & 0.54\\
+Wine & M-EHOA & $0.96203\pm0.01582$ & 7.27 & 1.12\\
+Wine & SP-EHOA & $0.96203\pm0.01582$ & 7.27 & 1.13\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The final-phase Wine comparison had 6/6/3 wins/ties/losses and was not alone
+significant ($p=0.3135$). Across the three distinct phases, the 45 paired Wine
+differences had mean 0.01243, median 0.01389, 24/12/9 wins/ties/losses, and
+Wilcoxon $p=0.001245$. This pooled value documents repeatability but is
+exploratory because method selection occurred between phases; it is not treated
+as a pristine external confirmatory test.
+
 \section{Discussion}
 The experiment meets a scoped success criterion: on Breast Cancer, full
 DFA/SFIG-EHOA produced a meaningfully more chance-corrected stable and smaller
@@ -253,24 +338,27 @@ makes the response direction testable and prevents positive feedback.
 
 \section{Threats to Validity}
 Only two low-dimensional datasets were available in the supplied repository.
-Ten repeats provide paired evidence but low statistical power. Repeated
-hold-outs reuse observations and are weaker than repeated nested CV. The
+Nested outer folds improve leakage control but do not substitute for independent
+datasets. The original hold-outs reuse observations, and the
 pairwise relevance/redundancy proxy cannot represent arbitrary synergistic
 interactions. Hyperparameters were fixed before the reported run, but the
 study lacks external validation. Runtime is platform-specific. These limitations
 prohibit state-of-the-art, medical, or universal claims.
 
 \section{Reproducibility and Conclusion}
-The repository contains the unchanged baseline, proposed module, 16 deterministic
-tests, YAML configuration, 80 raw runs, 80 traces, aggregate/statistical CSVs,
+The repository contains the unchanged baseline, proposed modules, 27 deterministic
+tests, YAML configurations, the original 80 runs, 450 tournament/confirmation
+runs and their traces, aggregate/statistical CSVs,
 figures, tables, a bilingual README, and an environment record. Runs are
 checkpointed and resumable. No failed seed was removed.
 
-In conclusion, DFA/SFIG-EHOA contributes a real, ablatable stability-feedback
-and guided-transition design. Current evidence supports a stability--reduction
-trade-off, not predictive superiority. A preregistered many-dataset study with
-repeated nested CV and evaluation-count-matched stopping is the appropriate
-next step.
+In conclusion, the negative DFA/SFIG-EHOA result motivated a retained,
+claim-driven innovation tournament. SP-EHOA is the selected follow-up: it
+preserves baseline behavior in the unconfirmed regime and applies memetic
+refinement where the Wine benefit repeated. Current evidence supports this
+regime-specific direction, not universal predictive superiority. A
+preregistered many-dataset study must next validate both the threshold and the
+generalization of the low-dimensional gain.
 
 \section*{Code and Data Availability}
 Source code and all reported artifacts are available in the
@@ -281,5 +369,5 @@ under copyright 2026 Amirgh23.
 
 \small
 \bibliographystyle{plain}
-\bibliography{paper/references}
+\bibliography{references}
 \end{document}
