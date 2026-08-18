@@ -1,0 +1,7 @@
+dataset,test,comparison,statistic,p_value,effect_median,effect_ci95_low,effect_ci95_high,paired_rank_biserial,cliffs_delta,wins,ties,losses,holm_adjusted_p,significant_holm
+breast_cancer,friedman,all,0.18181818181817147,0.9131007162822671,,,,,,,,,,
+breast_cancer,wilcoxon,M-EHOA vs EHOA,23.5,0.3966666240709714,0.0,-0.004201680672269004,0.004201680672268893,-0.2878787878787879,-0.08444444444444445,5.0,4.0,6.0,1.0,False
+breast_cancer,wilcoxon,SP-EHOA vs EHOA,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,15.0,0.0,1.0,False
+wine,friedman,all,2.000000000000013,0.36787944117144006,,,,,,,,,,
+wine,wilcoxon,M-EHOA vs EHOA,14.0,0.3135132343764381,0.0,0.0,0.01449275362318836,0.37777777777777777,0.044444444444444446,6.0,6.0,3.0,1.0,False
+wine,wilcoxon,SP-EHOA vs EHOA,14.0,0.3135132343764381,0.0,0.0,0.01449275362318836,0.37777777777777777,0.044444444444444446,6.0,6.0,3.0,1.0,False

@@ -43,6 +43,17 @@ class DFAEHOA(EHOA):
         if self.stability_strategy == "event": return improved or detector.counter > 0 or abs(diversity-previous_diversity) > .1
         raise ValueError("stability_strategy must be every, periodic, or event")
 
+    def _transition(self, position, reliability, interaction, confidence, ls, li):
+        """Hook for separately named, backward-compatible transition innovations."""
+        return transition_probabilities(position,reliability,interaction,mode=self.transition_mode,
+            lambda_stability=ls,lambda_interaction=li,reliability_confidence=confidence)
+
+    def _record_iteration_outcome(self, improved):
+        """Optional training-only feedback hook; vanilla DFA-EHOA is unchanged."""
+
+    def _extra_telemetry(self):
+        return {}
+
     def fit(self, X, y):
         started=time.perf_counter(); self._reset_state(); self._rng=np.random.default_rng(self.random_state)
         X=np.asarray(X,float); y=np.asarray(y,int)
@@ -84,11 +95,11 @@ class DFAEHOA(EHOA):
                     q_safe=np.clip(q,1e-12,1-1e-12)
                     entropy=-(q_safe*np.log2(q_safe)+(1-q_safe)*np.log2(1-q_safe))
                     confidence=1-entropy
-                mask=sample_mask(transition_probabilities(population[i],reliability,local_interaction,mode=self.transition_mode,lambda_stability=ls,lambda_interaction=li,reliability_confidence=confidence),self._rng)
+                mask=sample_mask(self._transition(population[i],reliability,local_interaction,confidence,ls,li),self._rng)
                 new_masks.append(mask); f,a,_=self._evaluate(mask)
                 if f<personal_fitness[i]: personal_fitness[i]=f; personal_positions[i]=population[i].copy()
                 improved |= self._consider_global(population[i],mask,f,a)
-            masks=new_masks; detector.update(self.best_fitness)
+            masks=new_masks; detector.update(self.best_fitness); self._record_iteration_outcome(improved)
             if self._should_update(iteration,improved,detector,diversity,previous_diversity):
                 tick=time.perf_counter()
                 if self.reliability_source == "resampling":
@@ -110,6 +121,7 @@ class DFAEHOA(EHOA):
                 selected_features=len(self.best_features),population_diversity=diversity,jaccard_stability=jaccard,
                 nogueira_stability=nogueira,sweep_factor=sf,inertia=inertia,stagnation_counter=detector.counter))
             self.telemetry_[-1]["controller_state"]=controller_state
+            self.telemetry_[-1].update(self._extra_telemetry())
         self.stability_seconds_=stability_seconds; self.runtime_seconds_=time.perf_counter()-started
         self.result_=EHOAResult(self.best_solution.copy(),self.best_features.copy(),self.best_accuracy,self.best_fitness,self.runtime_seconds_,self.evaluations_)
         return self.best_solution.copy(),self.best_accuracy,self.best_features.copy()

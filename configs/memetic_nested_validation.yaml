@@ -1,0 +1,14 @@
+experiment: memetic_nested_validation
+evaluation_protocol: repeated_nested_cv
+datasets: [breast_cancer, wine]
+methods: [EHOA, EHOA-BUDGET, M-EHOA]
+seeds: [161803, 271828, 314159]
+outer_folds: 3
+population: 5
+iterations: 4
+budget_iterations: 16
+folds: 3
+workers: 1
+resume: true
+memetic:
+  local_search_rounds: 2

@@ -1,0 +1,23 @@
+experiment: portfolio_confirmation
+evaluation_protocol: repeated_nested_cv
+datasets: [breast_cancer, wine]
+methods: [EHOA, IG-EHOA, M-EHOA, P-EHOA]
+seeds: [447214, 458258, 469042, 479583, 489898]
+outer_folds: 3
+population: 5
+iterations: 4
+folds: 3
+workers: 1
+resume: true
+dfa:
+  interaction_top_k: 30
+  lambda_interaction: 0.5
+  weight_schedule: adaptive
+portfolio:
+  dimension_threshold: 20
+  local_search_rounds: 2
+  interaction_top_k: 30
+  lambda_interaction: 0.5
+  weight_schedule: adaptive
+memetic:
+  local_search_rounds: 2

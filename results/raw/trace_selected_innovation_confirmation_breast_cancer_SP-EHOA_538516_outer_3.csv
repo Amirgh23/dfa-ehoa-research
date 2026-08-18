@@ -1,0 +1,5 @@
+iteration,fitness,cv_accuracy,selected_features,population_diversity,portfolio_strategy,dataset,method,seed,fold
+1,0.04632395950506193,0.9579219264258634,14,2.099827694316365,baseline,breast_cancer,SP-EHOA,538516,outer_3
+2,0.04632395950506193,0.9579219264258634,14,2.5192683852244886,baseline,breast_cancer,SP-EHOA,538516,outer_3
+3,0.041147731533558184,0.9631504395283924,14,2.324060344459113,baseline,breast_cancer,SP-EHOA,538516,outer_3
+4,0.041147731533558184,0.9631504395283924,14,1.5099643382250512,baseline,breast_cancer,SP-EHOA,538516,outer_3

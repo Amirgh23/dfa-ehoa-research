@@ -1,0 +1,16 @@
+experiment: selected_innovation_confirmation
+evaluation_protocol: repeated_nested_cv
+datasets: [breast_cancer, wine]
+methods: [EHOA, M-EHOA, SP-EHOA]
+seeds: [500000, 509902, 519615, 529150, 538516]
+outer_folds: 3
+population: 5
+iterations: 4
+folds: 3
+workers: 1
+resume: true
+memetic:
+  local_search_rounds: 2
+portfolio:
+  dimension_threshold: 20
+  local_search_rounds: 2

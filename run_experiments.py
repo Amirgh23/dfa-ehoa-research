@@ -7,12 +7,12 @@ from scipy.stats import friedmanchisquare, rankdata, wilcoxon
 from sklearn.datasets import load_breast_cancer, load_wine
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from ehoa import EHOA
-from proposed import DFAEHOA
+from proposed import DFAEHOA, ECGEHOA, MemeticEHOA, AlignedEHOA, GuardedEHOA, PortfolioEHOA, SafePortfolioEHOA
 from proposed.interaction import subset_redundancy, subset_interaction_quality
 from proposed.stability import compute_jaccard_stability, compute_nogueira_stability
 from utils import clean_dataset, evaluate_classifiers
 
-VARIANTS={"EHOA":None,"SF-EHOA":(True,"stability"),"IG-EHOA":(False,"interaction"),"DFA-EHOA":(True,"dual")}
+VARIANTS={"EHOA":None,"EHOA-BUDGET":None,"A-EHOA":None,"G-EHOA":None,"P-EHOA":None,"SP-EHOA":None,"SF-EHOA":(True,"stability"),"IG-EHOA":(False,"interaction"),"DFA-EHOA":(True,"dual"),"ECG-EHOA":(False,"dual"),"M-EHOA":None}
 def load_data(name, cfg=None):
     builtins={"breast_cancer":load_breast_cancer,"wine":load_wine}
     if name in builtins:
@@ -118,7 +118,10 @@ def main(argv=None):
             for parameter,values in cfg["sensitivity"].items():
                 for value in values:
                     method_specs.append((method,f"DFA-EHOA[{parameter}={value}]",base|{parameter:value}))
-        else: method_specs.append((method,method,cfg.get("dfa",{})))
+        else:
+            parameters=cfg.get("dfa",{}).copy()
+            if method=="ECG-EHOA": parameters.update(cfg.get("ecg",{}))
+            method_specs.append((method,method,parameters))
     masks={}
     for dataset in cfg["datasets"]:
       X,y=load_data(dataset,cfg)
@@ -127,7 +130,15 @@ def main(argv=None):
         for method,label,dfa_parameters in method_specs:
           if (dataset,label,seed,fold) in done: continue
           common=dict(n_hikers=cfg["population"],max_iter=cfg["iterations"],n_folds=cfg["folds"],random_state=selector_seed,verbose=False)
-          selector=EHOA(**common) if method=="EHOA" else DFAEHOA(**common,feedback_enabled=VARIANTS[method][0],transition_mode=VARIANTS[method][1],**dfa_parameters)
+          if method=="EHOA": selector=EHOA(**common)
+          elif method=="EHOA-BUDGET": selector=EHOA(**(common|{"max_iter":cfg.get("budget_iterations",common["max_iter"])}))
+          elif method=="A-EHOA": selector=AlignedEHOA(**common)
+          elif method=="G-EHOA": selector=GuardedEHOA(**common,**cfg.get("guarded",{}))
+          elif method=="P-EHOA": selector=PortfolioEHOA(**common,**cfg.get("portfolio",{}))
+          elif method=="SP-EHOA": selector=SafePortfolioEHOA(**common,**cfg.get("portfolio",{}))
+          elif method=="M-EHOA": selector=MemeticEHOA(**common,**cfg.get("memetic",{}))
+          elif method=="ECG-EHOA": selector=ECGEHOA(**common,**dfa_parameters)
+          else: selector=DFAEHOA(**common,feedback_enabled=VARIANTS[method][0],transition_mode=VARIANTS[method][1],**dfa_parameters)
           tracemalloc.start(); mask,_,features=selector.fit(Xtr,ytr); _,peak=tracemalloc.get_traced_memory(); tracemalloc.stop()
           tick=time.perf_counter(); metric,_,_=evaluate_classifiers(Xtr,ytr,Xte,yte,features,random_state=seed); classifier_seconds=time.perf_counter()-tick; knn=metric[metric.classifier=="knn"].iloc[0]
           key=(dataset,label); masks.setdefault(key,[]).append(mask.astype(int))
