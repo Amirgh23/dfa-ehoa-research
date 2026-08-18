@@ -1,0 +1,13 @@
+experiment: guarded_nested_validation
+evaluation_protocol: repeated_nested_cv
+datasets: [breast_cancer, wine]
+methods: [EHOA, G-EHOA]
+seeds: [316227, 331662, 346410, 360555, 374165]
+outer_folds: 3
+population: 5
+iterations: 4
+folds: 3
+workers: 1
+resume: true
+guarded:
+  selection_margin: 0.005

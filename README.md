@@ -83,6 +83,14 @@ This repository distinguishes implementation novelty from empirical superiority.
 Claims are accepted only when the recorded paired results support them. Negative,
 partial, or non-significant findings remain in the report.
 
+### Selected follow-up innovation
+
+An eight-method, common-split tournament selected `M-EHOA` for the
+low-dimensional regime. The follow-up `SP-EHOA` uses that refinement below 20
+features and preserves exact baseline EHOA behavior otherwise. See
+`docs/INNOVATION_TOURNAMENT_DECISION_FA.md`; the evidence supports this as the
+next research direction, not as universal superiority across datasets.
+
 ## فارسی
 
 این مخزن پیاده‌سازی پژوهشی و قابل‌بازتولید **DFA/SFIG-EHOA** برای انتخاب ویژگی

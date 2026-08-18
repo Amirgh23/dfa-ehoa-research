@@ -1,0 +1,3 @@
+dataset,test,comparison,statistic,p_value,effect_median,effect_ci95_low,effect_ci95_high,paired_rank_biserial,cliffs_delta,wins,ties,losses,holm_adjusted_p,significant_holm
+breast_cancer,wilcoxon,G-EHOA vs EHOA,1.0,0.6547208460185769,0.0,0.0,0.0,0.3333333333333333,0.008888888888888889,1,13,1,0.6547208460185769,False
+wine,wilcoxon,G-EHOA vs EHOA,4.0,0.17295491798842066,0.0,0.0,0.02083333333333337,0.6190476190476191,0.16444444444444445,4,9,2,0.34590983597684133,False

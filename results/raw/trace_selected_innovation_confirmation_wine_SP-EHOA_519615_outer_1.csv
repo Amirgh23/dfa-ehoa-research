@@ -1,0 +1,5 @@
+iteration,fitness,cv_accuracy,selected_features,population_diversity,local_improvements,portfolio_strategy,dataset,method,seed,fold
+1,0.080903846153846,0.9237179487179489,7,1.9372205589234095,2,memetic,wine,SP-EHOA,519615,outer_1
+2,0.080903846153846,0.9237179487179489,7,1.7571955385586173,2,memetic,wine,SP-EHOA,519615,outer_1
+3,0.080903846153846,0.9237179487179489,7,2.0308562836809916,2,memetic,wine,SP-EHOA,519615,outer_1
+4,0.06628846153846145,0.9408119658119659,10,1.3639049959595484,2,memetic,wine,SP-EHOA,519615,outer_1

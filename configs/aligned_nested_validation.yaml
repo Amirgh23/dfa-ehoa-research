@@ -1,0 +1,11 @@
+experiment: aligned_nested_validation
+evaluation_protocol: repeated_nested_cv
+datasets: [breast_cancer, wine]
+methods: [EHOA, A-EHOA]
+seeds: [141421, 173205, 223607, 244949, 264575]
+outer_folds: 3
+population: 5
+iterations: 4
+folds: 3
+workers: 1
+resume: true
