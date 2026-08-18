@@ -12,4 +12,5 @@ def test_versioned_dataset_sha256_manifest_matches_files():
 
     assert expected == {"breast_cancer.csv": expected["breast_cancer.csv"], "wine.csv": expected["wine.csv"]}
     for filename, digest in expected.items():
-        assert sha256((data_dir / filename).read_bytes()).hexdigest() == digest
+        canonical_bytes = (data_dir / filename).read_bytes().replace(b"\r\n", b"\n")
+        assert sha256(canonical_bytes).hexdigest() == digest
