@@ -34,8 +34,10 @@ full method changed mean balanced accuracy by -0.0056 and 0.0000 relative to
 EHOA, while improving chance-corrected Nogueira stability by 0.0726 and 0.0365.
 On Breast Cancer it also selected 1.4 fewer features. No Holm-corrected
 predictive comparison was significant, and runtime was approximately three
-times the baseline. The evidence therefore supports a scoped
-stability--reduction trade-off, not universal predictive superiority. All 80
+times the baseline. In the three-objective outcome space (maximize balanced
+accuracy and stability; minimize feature count), the full method is Pareto
+non-dominated on both datasets and dominates SF-EHOA on Wine. The evidence
+therefore supports a scoped stability--reduction trade-off, not universal predictive superiority. All 80
 runs, traces, configurations, tests, figures, and statistical outputs are
 released with the implementation.
 \end{abstract}
@@ -76,6 +78,18 @@ The contributions are:
   reduction, stability, redundancy, cost, and non-parametric statistical
   evidence.
 \end{itemize}
+
+\subsection{Research hypotheses and novelty boundary}
+The study tests three preregisterable, falsifiable hypotheses: $H_1$, feedback
+increases chance-corrected subset stability relative to EHOA; $H_2$, interaction
+guidance improves the held-out performance--reduction trade-off; and $H_3$, the
+full method is Pareto non-dominated in balanced accuracy (maximize), Nogueira
+stability (maximize), and selected-feature count (minimize). Failure to improve
+accuracy alone does not confirm these hypotheses. The novelty claim is limited
+to the coupled mechanism: cross-resampling evidence controls continuous search
+dynamics through a corroborated two-regime law and controls discrete inclusion
+through a separate entropy-confidence gate. Neither adaptive metaheuristics nor
+relevance/redundancy scoring is claimed as novel in isolation.
 
 \section{Method}
 \subsection{Baseline and notation}
@@ -237,6 +251,19 @@ Full-method runtime was 3.18 times baseline on Breast Cancer and 3.01 times on
 Wine. The overhead is expected from resampling and interaction estimation and
 is not hidden by nominal same-iteration comparisons.
 
+\subsection{Pareto and hypothesis audit}
+A method is dominated only if another method is no worse on all three reported
+objectives and strictly better on at least one. DFA-EHOA is non-dominated on
+both datasets. On Breast Cancer, SF-EHOA has higher accuracy and fewer features,
+but lower Nogueira stability; hence neither dominates the other. On Wine,
+IG-EHOA has slightly higher accuracy and stability but uses more features,
+whereas EHOA uses fewer features with lower stability. DFA-EHOA also strictly
+dominates SF-EHOA on Wine. Accordingly, $H_1$ is supported descriptively for the
+full method on both datasets, $H_2$ receives component-level but inconsistent
+support, and $H_3$ is supported for this limited benchmark. None is promoted to
+a population-wide or state-of-the-art claim because corrected predictive tests
+are non-significant and only two datasets were available.
+
 \section{Discussion}
 The experiment meets a scoped success criterion: on Breast Cancer, full
 DFA/SFIG-EHOA produced a meaningfully more chance-corrected stable and smaller
@@ -275,8 +302,8 @@ next step.
 \section*{Code and Data Availability}
 Source code and all reported artifacts are available in the
 \href{https://github.com/Amirgh23/dfa-ehoa-research}{public project repository}.
-The datasets are distributed
-with scikit-learn; no private records are required. The software is MIT licensed
+The exact CC BY 4.0 dataset snapshots are committed with source attribution and
+checksums; no private records are required. The software is MIT licensed
 under copyright 2026 Amirgh23.
 
 \small
