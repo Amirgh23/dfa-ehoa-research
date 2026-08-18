@@ -1,15 +1,17 @@
-# Local datasets
+# Versioned datasets
 
-Dataset files are intentionally ignored by Git. Copy CSV files into this folder
-or keep them anywhere on the local machine, then copy
-`configs/home_datasets.example.yaml` and edit each absolute `path` and `target`
-column. Feature columns must be numeric; labels may be strings or numbers.
+This directory makes the reported experiment fully self-contained. The CSV
+snapshots are exported from the scikit-learn 1.8 dataset loaders without row
+sampling or feature transformation.
 
-Run with:
+| File | Rows | Features | Target | Source DOI | License |
+|---|---:|---:|---|---|---|
+| `breast_cancer.csv` | 569 | 30 | `target` (0/1) | 10.24432/C5DW2B | CC BY 4.0 |
+| `wine.csv` | 178 | 13 | `target` (0/1/2) | 10.24432/C5PC7J | CC BY 4.0 |
 
-```powershell
-python run_experiments.py --config configs/home_datasets.yaml
-```
+The runner automatically prefers these committed snapshots. The scikit-learn
+loaders are retained only as a compatibility fallback. SHA-256 digests are in
+`SHA256SUMS.txt`.
 
-Completed dataset/method/seed tuples are checkpointed under `results/raw`, so an
-interrupted experiment can be resumed with the same command.
+Dataset licensing and attribution are separate from the repository's MIT code
+license; see `DATA_LICENSE.md`.
