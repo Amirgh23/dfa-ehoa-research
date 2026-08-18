@@ -67,10 +67,11 @@ the first prototype.
 - Statistics: per-dataset Friedman; paired Wilcoxon versus EHOA; Holm correction;
   paired rank-biserial and Cliff's delta; bootstrap CI of median paired change.
 
-Repeated nested CV was not used because the wrapper already performs inner CV
-for every candidate and the available experiment budget was bounded. Repeated
-stratified hold-out is therefore an explicitly documented, weaker alternative;
-results must not be generalized beyond these datasets.
+The primary paper run uses repeated stratified hold-out. A subsequent
+leakage-safe nested pilot uses two repeats and three outer folds, with the full
+selector and preprocessing confined to each outer-training partition. Its
+smaller population/iteration budget makes it a protocol validation rather than
+a replacement for the primary run.
 
 ## Main results
 
@@ -112,6 +113,16 @@ were -0.0060 (95% bootstrap CI -0.0169 to 0.0069) and 0.0000 (CI 0 to 0).
 The Breast Cancer win/tie/loss count was 3/0/7 and Wine was 1/8/1. Therefore no
 predictive-superiority claim is accepted.
 
+## Repeated nested-CV pilot
+
+The nested pilot contains 48 completed outer-fold runs: two repeats, three
+outer folds, two datasets and four paired methods. Mean balanced accuracy on
+Breast Cancer was 0.9534 for EHOA, 0.9498 for SF-EHOA, 0.9456 for IG-EHOA and
+0.9439 for DFA-EHOA. On Wine all four methods tied at 0.9628 under the small
+search budget. The outer test fold remained untouched until final evaluation.
+This evidence does not support predictive superiority; it confirms that the
+negative conclusion is not caused by outer-test leakage.
+
 ## Cost and complexity
 
 The wrapper dominates at approximately `O(T P CV C_classifier)`. Stability
@@ -145,8 +156,8 @@ higher-order interactions. Runtime results are platform-specific.
 
 ## Reproducibility and deliverables
 
-The repository contains the immutable baseline, proposed package, 16 passing
-tests, YAML configuration, all 80 raw runs, 80 convergence traces, aggregate and
+The repository contains the immutable baseline, proposed package, 20 passing
+tests, YAML configuration, all 80 primary runs plus 48 nested-pilot runs, convergence traces, aggregate and
 statistical CSV files, figures, LaTeX tables, bilingual README, methodology,
 novelty comparison, environment record, English LaTeX manuscript and rendered
 PDF. `resume: true` makes the experiment interruption-safe. Every conclusion in
@@ -158,4 +169,4 @@ DFA/SFIG-EHOA is a real and testable methodological extension, but the present
 evidence supports a stability/reduction trade-off rather than predictive
 superiority. The scientifically strongest next step is preregistered validation
 of the full method and especially IG-EHOA on many high-dimensional datasets,
-with repeated nested CV and evaluation-count-matched stopping.
+with a full-scale repeated nested-CV benchmark and evaluation-count-matched stopping.
