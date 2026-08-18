@@ -3,6 +3,7 @@ from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 
 from ehoa import EHOA
+from run_experiments import load_data
 from utils import (
     CHAOTIC_MAPS,
     chaotic_sequence,
@@ -84,3 +85,12 @@ def test_binary_specificity_is_true_negative_rate():
     # tn=2, fp=1, fn=1, tp=2 => specificity=2/3
     metrics = calculate_metrics([0, 0, 0, 1, 1, 1], [0, 0, 1, 0, 1, 1])
     assert metrics["specificity"] == 2 / 3
+
+
+def test_committed_dataset_snapshots_are_complete():
+    breast_X, breast_y = load_data("breast_cancer")
+    wine_X, wine_y = load_data("wine")
+    assert breast_X.shape == (569, 30) and breast_y.shape == (569,)
+    assert wine_X.shape == (178, 13) and wine_y.shape == (178,)
+    assert set(np.unique(breast_y)) == {0, 1}
+    assert set(np.unique(wine_y)) == {0, 1, 2}

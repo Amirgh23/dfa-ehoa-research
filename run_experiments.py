@@ -16,6 +16,14 @@ VARIANTS={"EHOA":None,"SF-EHOA":(True,"stability"),"IG-EHOA":(False,"interaction
 def load_data(name, cfg=None):
     builtins={"breast_cancer":load_breast_cancer,"wine":load_wine}
     if name in builtins:
+        # Prefer the committed snapshot so a clone is self-contained. The
+        # sklearn loader remains a compatibility fallback for older checkouts.
+        snapshot=Path(__file__).resolve().parent/"data"/f"{name}.csv"
+        if snapshot.exists():
+            frame=pd.read_csv(snapshot)
+            if "target" not in frame: raise ValueError(f"Committed dataset {snapshot} has no target column")
+            y=frame.pop("target").to_numpy(); X=frame.to_numpy(dtype=float)
+            return clean_dataset(X,y)
         bunch=builtins[name](); return clean_dataset(bunch.data,bunch.target)
     external=(cfg or {}).get("external_datasets",{}).get(name)
     if not external: raise ValueError(f"Unknown dataset {name!r}; define it under external_datasets")

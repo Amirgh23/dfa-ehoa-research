@@ -16,6 +16,9 @@ Optimization Algorithm while preserving the original baseline in `ehoa.py`.
 [LaTeX source](paper/main.tex) · [final evidence report](FINAL_RESEARCH_REPORT.md)
 · [raw paired runs](results/raw/paper_revised.csv)
 
+The exact benchmark snapshots are committed under [`data/`](data/README.md),
+including source attribution, CC BY 4.0 licensing, and SHA-256 checksums.
+
 ### Research contribution
 
 The proposed method adds two ablatable mechanisms outside the baseline fitness:
@@ -88,6 +91,10 @@ partial, or non-significant findings remain in the report.
 **خروجی‌ها:** [مقاله انگلیسی PDF](output/pdf/DFA_SFIG_EHOA_Paper.pdf) ·
 [سورس LaTeX](paper/main.tex) · [گزارش نهایی شواهد](FINAL_RESEARCH_REPORT.md) ·
 [نتایج خام](results/raw/paper_revised.csv)
+
+نسخه دقیق دیتاست‌های استفاده‌شده نیز در پوشه [`data/`](data/README.md) همراه
+با منبع، مجوز CC BY 4.0 و checksum قرار گرفته است؛ بنابراین اجرای پروژه به
+دانلود جداگانه دیتاست وابسته نیست.
 
 ### نوآوری پژوهش
 

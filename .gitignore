@@ -5,8 +5,7 @@ __pycache__/
 legacy_results/
 docs/EHOA_Presentation_FA/
 *.inspect.ndjson
-data/*
-!data/README.md
+# Versioned public benchmark datasets live in data/. Do not ignore them.
 *.env
 .env.*
 results/*.log
